@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Habit Tracker</title>
+</head>
+
+<body>
+
+<h2>Habit Tracker</h2>
+
+<input id="habitInput" placeholder="New habit">
+<button onclick="addHabit()">Add</button>
+
+<ul id="habitList"></ul>
+
+<script>
+
+const API = "/api/habits";
+
+async function loadHabits() {
+
+  const res = await fetch(API);
+  const habits = await res.json();
+
+  const list = document.getElementById("habitList");
+  list.innerHTML = "";
+
+  habits.forEach(habit => {
+
+    const li = document.createElement("li");
+
+    li.innerHTML =
+      habit.name +
+      (habit.completed ? " ✔" : "") +
+      ` <button onclick="completeHabit(${habit.id})">Done</button>
+        <button onclick="deleteHabit(${habit.id})">Delete</button>`;
+
+    list.appendChild(li);
+
+  });
+}
+
+async function addHabit() {
+
+  const name = document.getElementById("habitInput").value;
+
+  await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+
+  loadHabits();
+}
+
+async function completeHabit(id) {
+
+  await fetch(API + "/" + id, {
+    method: "PUT"
+  });
+
+  loadHabits();
+}
+
+async function deleteHabit(id) {
+
+  await fetch(API + "/" + id, {
+    method: "DELETE"
+  });
+
+  loadHabits();
+}
+
+loadHabits();
+
+</script>
+
+</body>
+</html>
