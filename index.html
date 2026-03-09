@@ -1,79 +1,215 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Habit Tracker</title>
+  <style>
+    /* General Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 4px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    h3 {
+      margin-top: 25px;
+      margin-bottom: 12px;
+      color: #555;
+    }
+
+    .habit-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .habit-card {
+      background: #f9f9f9;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s;
+    }
+
+    .habit-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .habit-card.completed {
+      text-decoration: line-through;
+      color: gray;
+      opacity: 0.7;
+    }
+
+    .habit-card .buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .habit-card .buttons button {
+      flex: 1;
+      font-size: 13px;
+      padding: 6px 0;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 15px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<h2>Habit Tracker</h2>
+  <h1>Habit Tracker</h1>
 
-<input id="habitInput" placeholder="New habit">
-<button onclick="addHabit()">Add</button>
+  <div class="container">
 
-<ul id="habitList"></ul>
+    <!-- Input Form -->
+    <div class="form-group">
+      <label for="name">Habit Name</label>
+      <input type="text" id="name" placeholder="Enter habit name">
+    </div>
 
-<script>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <input type="text" id="description" placeholder="Enter habit description">
+    </div>
 
-const API = "/api/habits";
+    <div class="form-group">
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="Health">Health</option>
+        <option value="Study">Study</option>
+        <option value="Fitness">Fitness</option>
+        <option value="Personal">Personal</option>
+      </select>
+    </div>
 
-async function loadHabits() {
+    <button onclick="addHabit()">Add Habit</button>
 
-  const res = await fetch(API);
-  const habits = await res.json();
+    <h3>Your Habits</h3>
+    <div id="habitList" class="habit-list"></div>
 
-  const list = document.getElementById("habitList");
-  list.innerHTML = "";
+  </div>
 
-  habits.forEach(habit => {
+  <script>
+    const API = "/api/habits";
 
-    const li = document.createElement("li");
+    async function loadHabits() {
+      const res = await fetch(API);
+      const habits = await res.json();
 
-    li.innerHTML =
-      habit.name +
-      (habit.completed ? " ✔" : "") +
-      ` <button onclick="completeHabit(${habit.id})">Done</button>
-        <button onclick="deleteHabit(${habit.id})">Delete</button>`;
+      const list = document.getElementById("habitList");
+      list.innerHTML = "";
 
-    list.appendChild(li);
+      habits.forEach(habit => {
+        const card = document.createElement("div");
+        card.className = "habit-card";
+        if (habit.completed) card.classList.add("completed");
 
-  });
-}
+        card.innerHTML = `
+          <strong>${habit.name}</strong>
+          <p>${habit.description}</p>
+          <small>Category: ${habit.category} | Created: ${habit.createdAt}</small>
+          <div class="buttons">
+            <button onclick="completeHabit(${habit.id})">Complete</button>
+            <button onclick="deleteHabit(${habit.id})" style="background:#dc3545">Delete</button>
+          </div>
+        `;
 
-async function addHabit() {
+        list.appendChild(card);
+      });
+    }
 
-  const name = document.getElementById("habitInput").value;
+    async function addHabit() {
+      const name = document.getElementById("name").value;
+      const description = document.getElementById("description").value;
+      const category = document.getElementById("category").value;
 
-  await fetch(API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name })
-  });
+      if(!name.trim()) return alert("Habit name cannot be empty!");
 
-  loadHabits();
-}
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, category })
+      });
 
-async function completeHabit(id) {
+      document.getElementById("name").value = "";
+      document.getElementById("description").value = "";
+      loadHabits();
+    }
 
-  await fetch(API + "/" + id, {
-    method: "PUT"
-  });
+    async function completeHabit(id) {
+      await fetch(API + "/" + id, { method: "PUT" });
+      loadHabits();
+    }
 
-  loadHabits();
-}
+    async function deleteHabit(id) {
+      await fetch(API + "/" + id, { method: "DELETE" });
+      loadHabits();
+    }
 
-async function deleteHabit(id) {
-
-  await fetch(API + "/" + id, {
-    method: "DELETE"
-  });
-
-  loadHabits();
-}
-
-loadHabits();
-
-</script>
+    loadHabits();
+  </script>
 
 </body>
 </html>
